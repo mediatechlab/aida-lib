@@ -18,9 +18,22 @@ def test_concat():
     x = aida.Slot('name')
     x.assign('Alice')
     sent = aida.Const('good')
+    ctx = aida.Ctx()
 
     node = x + 'is a' + sent + 'guy.'
-    assert node.render() == 'Alice is a good guy.'
+    assert node.render(ctx) == 'Alice is a good guy.'
 
     x.assign('Bob')
-    assert node.render() == 'Bob is a good guy.'
+    assert node.render(ctx) == 'Bob is a good guy.'
+
+
+def test_alt():
+    x = aida.Slot('name')
+    x.assign('Alice')
+
+    other_names = aida.Choices(['Bob', 'Chris'], seed=42)
+    ctx = aida.Ctx()
+    alt = aida.Alt(x, other_names)
+
+    assert alt.render(ctx) == 'Alice'
+    assert alt.render(ctx) == 'Bob'
