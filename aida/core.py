@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, cast
 import random
 
 PrimaryType = Union[str, int, float]
@@ -38,6 +38,12 @@ def render(aida_obj: ValidType, ctx: Ctx = None):
         raise Exception(f'Unexpected obj {aida_obj}')
 
 
+def _update_ctx(ctx: Ctx, *items: ValidType) -> ValidType:
+    for item in items:
+        ctx.add(item)
+    return items[-1]
+
+
 class Node(AidaObj):
     def __init__(self, items: List[ValidType]) -> None:
         self.items = items
@@ -47,8 +53,7 @@ class Node(AidaObj):
 
     def render(self, ctx) -> str:
         ret = ' '.join(render(obj, ctx) for obj in self.items)
-        ctx.add(self)
-        return ret
+        return cast(str, _update_ctx(ctx, self, ret))
 
 
 class Const(AidaObj):
@@ -59,8 +64,7 @@ class Const(AidaObj):
         return hash(self.obj)
 
     def render(self, ctx) -> ValidType:
-        ctx.add(self)
-        return self.obj
+        return _update_ctx(ctx, self, self.obj)
 
 
 Empty = Const('')
@@ -80,8 +84,7 @@ class Slot(AidaObj):
 
     def render(self, ctx) -> ValidType:
         assert self.value is not None
-        ctx.add(self)
-        return self.value
+        return _update_ctx(ctx, self, self.value)
 
 
 class Choices(AidaObj):
@@ -95,8 +98,7 @@ class Choices(AidaObj):
 
     def render(self, ctx) -> ValidType:
         ret = random.choice(self.items)
-        ctx.add(ret)
-        return ret
+        return _update_ctx(ctx, self, ret)
 
 
 class Alt(AidaObj):
