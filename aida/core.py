@@ -92,6 +92,9 @@ class Operand(object):
     def __ne__(self, other) -> 'Operand':
         return Operand(Operation('ne', self, other))
 
+    def in_ctx(self, ctx: Ctx) -> 'Operand':
+        return Operand(Operation('in_ctx', self, ctx))
+
 
 class Operation(object):
     def __init__(self, op, *operands: Operand) -> None:
@@ -113,12 +116,14 @@ class Operation(object):
     def eval(self):
         values = [self._unwrap(opr) for opr in self.operands]
 
-        if self.op in ('gt', 'ge', 'lt', 'le', 'eq', 'ne', 'and_'):
-            assert len(self.operands) == 2
-        else:
-            assert len(self.operands) == 1
+        required_operands = 2 if self.op in (
+            'gt', 'ge', 'lt', 'le', 'eq', 'ne', 'and_', 'in_ctx') else 1
+        assert len(self.operands) == required_operands
 
-        return getattr(operator, self.op)(*values)
+        if self.op == 'in_ctx':
+            return cast(Ctx, values[1]).contains(values[0])
+        else:
+            return getattr(operator, self.op)(*values)
 
 
 class Const(AidaObj, Operand):

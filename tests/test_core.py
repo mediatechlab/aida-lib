@@ -60,3 +60,14 @@ def test_branch():
 
     branch = aida.Branch((x > k) & (t == False), 'greater', 'not greater')
     assert aida.render(branch) == 'not greater'
+
+
+def test_in_ctx():
+    ctx = aida.Ctx()
+    k = aida.Const('Alice')
+    branch = aida.Branch(k.in_ctx(ctx), 'yes', 'no')
+
+    assert aida.render(branch) == 'no'
+
+    k.render(ctx)
+    assert aida.render(branch) == 'yes'
