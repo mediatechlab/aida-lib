@@ -1,6 +1,9 @@
 from typing import List, Union, cast
 import random
 
+__all__ = ['Ctx', 'render', 'Const', 'Slot', 'Empty', 'Choices', 'Alt', 'Enumeration',
+           'CondConst', 'CondTrue', 'CondFalse', 'CondCtxContains', 'Conditional']
+
 PrimaryType = Union[str, int, float]
 ValidType = Union['AidaObj', PrimaryType]
 
@@ -26,9 +29,6 @@ class AidaObj(object):
 
     def __add__(self, other) -> 'Node':
         return Node([self, other], sep='')
-
-    def __hash__(self) -> int:
-        raise NotImplementedError()
 
 
 def render(aida_obj: ValidType, ctx: Ctx = None):
@@ -146,3 +146,73 @@ class Enumeration(AidaObj):
     def render(self, ctx: Ctx) -> ValidType:
         ret = self._render(ctx, len(self.aida_objs), self.aida_objs)
         return _update_ctx(ctx, self, ret)
+
+
+class Condition:
+    def eval(self, ctx: Ctx) -> bool:
+        raise NotImplementedError()
+
+    def __not__(self) -> 'CondOp':
+        return CondOp('not', self)
+
+    def __and__(self, other) -> 'CondOp':
+        return CondOp('and', self, other)
+
+    def __or__(self, other) -> 'CondOp':
+        return CondOp('or', self, other)
+
+
+class CondOp(Condition):
+    def __init__(self, op: str, *items: 'Condition') -> None:
+        self.op = op
+        self.items = items
+        assert len(items) > 0
+        assert op != 'not' or len(items) == 1
+
+    def eval(self, ctx: Ctx) -> bool:
+        val = True
+
+        if self.op == 'and':
+            for item in self.items:
+                val &= item.eval(ctx)
+        elif self.op == 'or':
+            for item in self.items:
+                val |= item.eval(ctx)
+        elif self.op == 'not':
+            val = not self.items[0].eval(ctx)
+        else:
+            raise Exception(f'Unknown operation {self.op}')
+
+        return val
+
+
+class CondConst(Condition):
+    def __init__(self, val) -> None:
+        self.val = val
+
+    def eval(self, ctx: Ctx) -> bool:
+        return self.val
+
+
+CondTrue = CondConst(True)
+CondFalse = CondConst(True)
+
+
+class CondCtxContains(Condition):
+    def __init__(self, aida_obj: ValidType) -> None:
+        self.aida_obj = aida_obj
+
+    def eval(self, ctx: Ctx) -> bool:
+        return ctx.contains(self.aida_obj)
+
+
+class Conditional(AidaObj):
+    def __init__(self, cond, val_true: ValidType, val_false: ValidType = Empty) -> None:
+        self.cond = cond
+        self.val_true = Const(val_true)
+        self.val_false = Const(val_false)
+
+    def render(self, ctx: Ctx) -> ValidType:
+        aida_obj = self.val_true if self.cond.eval(ctx) else self.val_false
+        ret = aida_obj.render(ctx)
+        return _update_ctx(ctx, self, aida_obj, ret)

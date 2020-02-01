@@ -1,4 +1,4 @@
-import aida.core as aida
+import aida
 
 
 def test_render_simple_choice():
@@ -44,3 +44,11 @@ def test_enumerate():
     assert aida.render(aida.Enumeration(['Alice', 'Bob'])) == 'Alice and Bob'
     assert aida.render(aida.Enumeration(
         ['Alice', 'Bob', 'Chris'])) == 'Alice, Bob, and Chris'
+
+
+def test_conditional_ctx_contains():
+    ctx = aida.Ctx()
+    ctx.add('something')
+    cond = aida.CondCtxContains('something') & aida.CondTrue
+    conditional = aida.Conditional(cond, 'true')
+    assert aida.render(conditional, ctx) == 'true'
