@@ -21,10 +21,10 @@ class AidaObj(object):
     def render(self, ctx: Ctx) -> 'ValidType':
         raise NotImplementedError()
 
-    def __add__(self, other) -> 'Node':
+    def __or__(self, other) -> 'Node':
         return Node([self, other], sep=' ')
 
-    def __mul__(self, other) -> 'Node':
+    def __add__(self, other) -> 'Node':
         return Node([self, other], sep='')
 
     def __hash__(self) -> int:
@@ -139,9 +139,9 @@ class Enumeration(AidaObj):
             return Const(items[0])
         elif len(items) == 2:
             c = Const(items[0])
-            return (c + 'and' if n_items == 2 else c * ', and') + Const(items[1])
+            return (c | 'and' if n_items == 2 else c + ', and') | Const(items[1])
         else:
-            return Const(items[0]) * ',' + self._render(ctx, n_items, items[1:])
+            return Const(items[0]) + ',' | self._render(ctx, n_items, items[1:])
 
     def render(self, ctx: Ctx) -> ValidType:
         ret = self._render(ctx, len(self.aida_objs), self.aida_objs)

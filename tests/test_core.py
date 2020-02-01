@@ -20,7 +20,7 @@ def test_concat():
     sent = aida.Const('good')
     ctx = aida.Ctx()
 
-    node = x + 'is a' + sent + 'person.'
+    node = x | 'is a' | sent | 'person.'
     assert node.render(ctx) == 'Alice is a good person.'
 
     x.assign('Bob')
