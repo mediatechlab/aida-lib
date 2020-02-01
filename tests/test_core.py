@@ -2,9 +2,9 @@ import aida
 
 
 def test_render_simple_choice():
-    x = aida.Slot()
+    x = aida.Var()
     x.assign('Alice')
-    y = aida.Slot()
+    y = aida.Var()
     y.assign('Bob')
     choices = aida.Choices([x, y], seed=42)
 
@@ -15,7 +15,7 @@ def test_render_simple_choice():
 
 
 def test_concat():
-    x = aida.Slot('name')
+    x = aida.Var('name')
     x.assign('Alice')
     sent = aida.Const('good')
     ctx = aida.Ctx()
@@ -28,15 +28,15 @@ def test_concat():
 
 
 def test_alt():
-    x = aida.Slot('name')
+    x = aida.Var('name')
     x.assign('Alice')
 
     other_names = aida.Choices(['Bob', 'Chris'], seed=42)
     ctx = aida.Ctx()
     alt = aida.Alt(x, other_names)
 
-    assert alt.render(ctx) == 'Alice'
-    assert alt.render(ctx) == 'Bob'
+    assert aida.render(alt, ctx) == 'Alice'
+    assert aida.render(alt, ctx) == 'Bob'
 
 
 def test_enumerate():
@@ -44,11 +44,3 @@ def test_enumerate():
     assert aida.render(aida.Enumeration(['Alice', 'Bob'])) == 'Alice and Bob'
     assert aida.render(aida.Enumeration(
         ['Alice', 'Bob', 'Chris'])) == 'Alice, Bob, and Chris'
-
-
-def test_conditional_ctx_contains():
-    ctx = aida.Ctx()
-    ctx.add('something')
-    cond = aida.CondCtxContains('something') & aida.CondTrue
-    conditional = aida.Conditional(cond, 'true')
-    assert aida.render(conditional, ctx) == 'true'
