@@ -22,7 +22,10 @@ class AidaObj(object):
         raise NotImplementedError()
 
     def __add__(self, other) -> 'Node':
-        return Node([self, other])
+        return Node([self, other], sep=' ')
+
+    def __mul__(self, other) -> 'Node':
+        return Node([self, other], sep='')
 
     def __hash__(self) -> int:
         raise NotImplementedError()
@@ -45,14 +48,15 @@ def _update_ctx(ctx: Ctx, *items: ValidType) -> ValidType:
 
 
 class Node(AidaObj):
-    def __init__(self, items: List[ValidType]) -> None:
+    def __init__(self, items: List[ValidType], sep=' ') -> None:
         self.items = items
+        self.sep = sep
 
     def __hash__(self) -> int:
         return hash(tuple(self.items))
 
     def render(self, ctx) -> str:
-        ret = ' '.join(render(obj, ctx) for obj in self.items)
+        ret = self.sep.join(render(obj, ctx) for obj in self.items)
         return cast(str, _update_ctx(ctx, self, ret))
 
 
