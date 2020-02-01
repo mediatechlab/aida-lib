@@ -40,7 +40,7 @@ def test_alt():
 
 
 def test_enumerate():
-    assert aida.render(aida.Enumerate(['Alice'])) == 'Alice'
-    assert aida.render(aida.Enumerate(['Alice', 'Bob'])) == 'Alice and Bob'
-    assert aida.render(aida.Enumerate(
+    assert aida.render(aida.Enumeration(['Alice'])) == 'Alice'
+    assert aida.render(aida.Enumeration(['Alice', 'Bob'])) == 'Alice and Bob'
+    assert aida.render(aida.Enumeration(
         ['Alice', 'Bob', 'Chris'])) == 'Alice, Bob, and Chris'

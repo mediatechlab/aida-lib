@@ -124,7 +124,7 @@ def create_ref(absolute: ValidType, alts: List[ValidType]) -> Alt:
     return Alt(main=absolute, alt=Choices(alts))
 
 
-class Enumerate(AidaObj):
+class Enumeration(AidaObj):
     def __init__(self, aida_objs: List[ValidType], lang='en-US') -> None:
         self.aida_objs = aida_objs
         assert lang == 'en-US', f'Unsupported language {lang}'
