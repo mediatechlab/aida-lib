@@ -37,3 +37,10 @@ def test_alt():
 
     assert alt.render(ctx) == 'Alice'
     assert alt.render(ctx) == 'Bob'
+
+
+def test_enumerate():
+    assert aida.render(aida.Enumerate(['Alice'])) == 'Alice'
+    assert aida.render(aida.Enumerate(['Alice', 'Bob'])) == 'Alice and Bob'
+    assert aida.render(aida.Enumerate(
+        ['Alice', 'Bob', 'Chris'])) == 'Alice, Bob, and Chris'

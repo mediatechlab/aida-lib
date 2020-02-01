@@ -115,9 +115,34 @@ class Alt(AidaObj):
 
     def render(self, ctx) -> ValidType:
         valid_obj = self.alt if ctx.contains(self.main) else self.main
-        ctx.add(valid_obj)
-        return valid_obj.render(ctx) if isinstance(valid_obj, AidaObj) else valid_obj
+        ret = valid_obj.render(ctx) if isinstance(
+            valid_obj, AidaObj) else valid_obj
+        return _update_ctx(ctx, valid_obj, self, ret)
 
 
 def create_ref(absolute: ValidType, alts: List[ValidType]) -> Alt:
     return Alt(main=absolute, alt=Choices(alts))
+
+
+class Enumerate(AidaObj):
+    def __init__(self, aida_objs: List[ValidType], lang='en-US') -> None:
+        self.aida_objs = aida_objs
+        assert lang == 'en-US', f'Unsupported language {lang}'
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.aida_objs))
+
+    def _render(self, ctx: Ctx, n_items: int, items: List[ValidType]) -> ValidType:
+        if len(items) == 0:
+            return Empty
+        elif len(items) == 1:
+            return Const(items[0])
+        elif len(items) == 2:
+            c = Const(items[0])
+            return (c + 'and' if n_items == 2 else c * ', and') + Const(items[1])
+        else:
+            return Const(items[0]) * ',' + self._render(ctx, n_items, items[1:])
+
+    def render(self, ctx: Ctx) -> ValidType:
+        ret = self._render(ctx, len(self.aida_objs), self.aida_objs)
+        return _update_ctx(ctx, self, ret)
