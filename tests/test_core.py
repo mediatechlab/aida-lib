@@ -44,3 +44,19 @@ def test_enumerate():
     assert aida.render(aida.Enumeration(['Alice', 'Bob'])) == 'Alice and Bob'
     assert aida.render(aida.Enumeration(
         ['Alice', 'Bob', 'Chris'])) == 'Alice, Bob, and Chris'
+
+
+def test_branch():
+    x = aida.Var('val')
+    k = aida.Const(3)
+    t = aida.Const(True)
+    branch = aida.Branch((x > k) & (t == True), 'greater', 'not greater')
+
+    x.assign(1)
+    assert aida.render(branch) == 'not greater'
+
+    x.assign(5)
+    assert aida.render(branch) == 'greater'
+
+    branch = aida.Branch((x > k) & (t == False), 'greater', 'not greater')
+    assert aida.render(branch) == 'not greater'

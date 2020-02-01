@@ -2,18 +2,15 @@ from typing import List, Tuple, Union, cast
 import operator
 import random
 
-__all__ = ['Ctx', 'render', 'Const', 'Var',
-           'Empty', 'Choices', 'Alt', 'Enumeration']
+__all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty',
+           'Choices', 'Alt', 'Enumeration', 'Branch']
 
-PrimaryType = Union[str, int, float]
+PrimaryType = Union[str, int, float, bool]
 ValidType = Union['AidaObj', PrimaryType]
 
 
 def to_aida_obj(obj: ValidType) -> 'AidaObj':
-    if isinstance(obj, AidaObj):
-        return obj
-    else:
-        return Const(obj)
+    return obj if isinstance(obj, AidaObj) else Const(obj)
 
 
 class Ctx(object):
@@ -67,35 +64,107 @@ class Node(AidaObj):
         return cast(str, _update_ctx(ctx, self, ret))
 
 
-class Const(AidaObj):
-    def __init__(self, obj: PrimaryType) -> None:
-        self.obj = str(obj)
+class Operand(object):
+    def __init__(self, value=None) -> None:
+        self.value = value
 
     def __hash__(self) -> int:
-        return hash(self.obj)
+        return hash(self.value)
+
+    def __and__(self, other) -> 'Operand':
+        return Operand(Operation('and_', self, other))
+
+    def __gt__(self, other) -> 'Operand':
+        return Operand(Operation('gt', self, other))
+
+    def __ge__(self, other) -> 'Operand':
+        return Operand(Operation('ge', self, other))
+
+    def __lt__(self, other) -> 'Operand':
+        return Operand(Operation('lt', self, other))
+
+    def __le__(self, other) -> 'Operand':
+        return Operand(Operation('le', self, other))
+
+    def __eq__(self, other) -> 'Operand':
+        return Operand(Operation('eq', self, other))
+
+    def __ne__(self, other) -> 'Operand':
+        return Operand(Operation('ne', self, other))
+
+
+class Operation(object):
+    def __init__(self, op, *operands: Operand) -> None:
+        self.op = op
+        self.operands = operands
+
+    def __hash__(self) -> int:
+        return hash((self.op, self.operands))
+
+    @staticmethod
+    def _unwrap(item):
+        if isinstance(item, Operation):
+            return Operation._unwrap(item.eval())
+        elif isinstance(item, Operand):
+            return Operation._unwrap(item.value)
+        else:
+            return item
+
+    def eval(self):
+        values = [self._unwrap(opr) for opr in self.operands]
+
+        if self.op in ('gt', 'ge', 'lt', 'le', 'eq', 'ne', 'and_'):
+            assert len(self.operands) == 2
+        else:
+            assert len(self.operands) == 1
+
+        return getattr(operator, self.op)(*values)
+
+
+class Const(AidaObj, Operand):
+    def __init__(self, value: PrimaryType) -> None:
+        super().__init__(value)
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
     def render(self, ctx) -> str:
-        return cast(str, _update_ctx(ctx, self, self.obj))
+        return cast(str, _update_ctx(ctx, self, str(self.value)))
 
 
 Empty = Const('')
 
 
-class Var(AidaObj):
+class Branch(AidaObj):
+    def __init__(self, cond: Operand, left: ValidType, right: ValidType = Empty) -> None:
+        self.cond = cond
+        self.left = to_aida_obj(left)
+        self.right = to_aida_obj(right)
+
+    def __hash__(self) -> int:
+        return hash((self.__class__.__name__, self.cond, self.left, self.right))
+
+    def render(self, ctx: Ctx) -> AidaObj:
+        alternative = self.left if self.cond.value.eval() else self.right
+        ret = alternative.render(ctx)
+        return cast(AidaObj, _update_ctx(ctx, self, ret))
+
+
+class Var(AidaObj, Operand):
     def __init__(self, name: str = None) -> None:
+        super().__init__()
         self.name = name
-        self.value = None
 
     def __hash__(self) -> int:
         return hash((self.__class__.__name__, self.name))
 
-    def assign(self, val: ValidType) -> 'Var':
-        self.value = to_aida_obj(val)
+    def assign(self, value: PrimaryType) -> 'Var':
+        self.value = value
         return self
 
-    def render(self, ctx) -> AidaObj:
+    def render(self, ctx: Ctx) -> str:
         assert self.value is not None
-        return cast(AidaObj, _update_ctx(ctx, self, self.value))
+        return cast(str, _update_ctx(ctx, self, str(self.value)))
 
 
 class Choices(AidaObj):
@@ -107,7 +176,7 @@ class Choices(AidaObj):
     def __hash__(self) -> int:
         return hash((self.__class__.__name__, self.items))
 
-    def render(self, ctx) -> AidaObj:
+    def render(self, ctx: Ctx) -> AidaObj:
         ret = random.choice(self.items)
         return cast(AidaObj, _update_ctx(ctx, self, ret))
 
@@ -120,7 +189,7 @@ class Alt(AidaObj):
     def __hash__(self) -> int:
         return hash((self.__class__.__name__, self.main, self.alt))
 
-    def render(self, ctx) -> AidaObj:
+    def render(self, ctx: Ctx) -> AidaObj:
         valid_obj = self.alt if ctx.contains(self.main) else self.main
         ret = valid_obj.render(ctx) if isinstance(
             valid_obj, AidaObj) else valid_obj
