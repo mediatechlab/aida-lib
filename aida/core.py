@@ -92,8 +92,11 @@ class Operand(object):
     def __ne__(self, other) -> 'Operand':
         return Operand(Operation('ne', self, other))
 
+    def __invert__(self) -> 'Operand':
+        return Operand(Operation('not', self))
+
     def in_ctx(self, ctx: Ctx) -> 'Operand':
-        return Operand(Operation('in_ctx', self, ctx))
+        return Operand(Operation('in_ctx', self, Operand(ctx)))
 
 
 class Operation(object):
@@ -104,25 +107,30 @@ class Operation(object):
     def __hash__(self) -> int:
         return hash((self.op, self.operands))
 
+    def __repr__(self) -> str:
+        return (f'{self.op} {self.operands[0]}' if len(self.operands) == 1
+                else f'{self.operands[0]} {self.op} {self.operands[1]}')
+
     @staticmethod
-    def _unwrap(item):
-        if isinstance(item, Operation):
-            return Operation._unwrap(item.eval())
-        elif isinstance(item, Operand):
-            return Operation._unwrap(item.value)
+    def _unwrap(op):
+        if isinstance(op, Operation):
+            return Operation._unwrap(op.eval())
+        elif isinstance(op, Operand):
+            return Operation._unwrap(op.value)
         else:
-            return item
+            return op
 
     def eval(self):
-        values = [self._unwrap(opr) for opr in self.operands]
-
         required_operands = 2 if self.op in (
             'gt', 'ge', 'lt', 'le', 'eq', 'ne', 'and_', 'in_ctx') else 1
         assert len(self.operands) == required_operands
 
         if self.op == 'in_ctx':
-            return cast(Ctx, values[1]).contains(values[0])
+            return cast(Ctx, self.operands[1].value).contains(self.operands[0])
+        elif self.op == 'not':
+            return not self._unwrap(self.operands[0])
         else:
+            values = map(Operation._unwrap, self.operands)
             return getattr(operator, self.op)(*values)
 
 
@@ -187,7 +195,7 @@ class Choices(AidaObj):
 
 
 def create_alt(ctx: Ctx, left, right: ValidType = None) -> Branch:
-    return Branch(left.in_ctx(ctx), left, right or Empty)
+    return Branch(~left.in_ctx(ctx), left, right or Empty)
 
 
 def create_ref(ctx: Ctx, absolute, alts: List[ValidType]) -> Branch:
