@@ -17,6 +17,9 @@ class Ctx(object):
     def __init__(self) -> None:
         self.store = set()
 
+    def __repr__(self) -> str:
+        return f'Ctx(items={len(self.store)})'
+
     def contains(self, aida_obj: 'AidaObj') -> bool:
         return hash(aida_obj) in self.store
 
@@ -59,6 +62,9 @@ class Node(AidaObj):
     def __hash__(self) -> int:
         return hash(self.items)
 
+    def __repr__(self) -> str:
+        return f'Node(items={self.items}, sep={self.sep})'
+
     def render(self, ctx: Ctx) -> str:
         ret = self.sep.join(render(obj, ctx) for obj in self.items)
         return cast(str, _update_ctx(ctx, self, ret))
@@ -70,6 +76,9 @@ class Operand(object):
 
     def __hash__(self) -> int:
         return hash(self.value)
+
+    def __repr__(self) -> str:
+        return f'Op[{self.value}]'
 
     def __and__(self, other) -> 'Operand':
         return Operand(Operation('and_', self, other))
@@ -141,6 +150,9 @@ class Const(AidaObj, Operand):
     def __hash__(self) -> int:
         return hash(self.value)
 
+    def __repr__(self) -> str:
+        return f'Const({self.value})'
+
     def render(self, ctx) -> str:
         return cast(str, _update_ctx(ctx, self, str(self.value)))
 
@@ -157,6 +169,9 @@ class Branch(AidaObj):
     def __hash__(self) -> int:
         return hash((self.__class__.__name__, self.cond, self.left, self.right))
 
+    def __repr__(self) -> str:
+        return f'Branch({self.cond} ? {self.left} : {self.right})'
+
     def render(self, ctx: Ctx) -> AidaObj:
         alternative = self.left if self.cond.value.eval() else self.right
         ret = alternative.render(ctx)
@@ -170,6 +185,9 @@ class Var(AidaObj, Operand):
 
     def __hash__(self) -> int:
         return hash((self.__class__.__name__, self.name))
+
+    def __repr__(self) -> str:
+        return f'Var({self.name}={self.value})'
 
     def assign(self, value: PrimaryType) -> 'Var':
         self.value = value
@@ -188,6 +206,9 @@ class Choices(AidaObj):
 
     def __hash__(self) -> int:
         return hash((self.__class__.__name__, self.items))
+
+    def __repr__(self) -> str:
+        return f'Choices({self.items})'
 
     def render(self, ctx: Ctx) -> AidaObj:
         ret = random.choice(self.items)
@@ -209,6 +230,9 @@ class Enumeration(AidaObj):
 
     def __hash__(self) -> int:
         return hash(self.aida_objs)
+
+    def __repr__(self) -> str:
+        return f'Enumeration({self.aida_objs})'
 
     def _render(self, ctx: Ctx, n_items: int, items: Tuple[AidaObj]) -> AidaObj:
         if len(items) == 0:
