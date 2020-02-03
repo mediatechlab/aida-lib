@@ -2,8 +2,8 @@ from typing import List, Tuple, Union, cast
 import operator
 import random
 
-__all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty',
-           'Choices', 'Alt', 'Enumeration', 'Branch']
+__all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty', 'Choices',
+           'create_alt', 'create_ref', 'Enumeration', 'Branch']
 
 PrimaryType = Union[str, int, float, bool]
 ValidType = Union['AidaObj', PrimaryType]
@@ -141,10 +141,10 @@ Empty = Const('')
 
 
 class Branch(AidaObj):
-    def __init__(self, cond: Operand, left: ValidType, right: ValidType = Empty) -> None:
+    def __init__(self, cond: Operand, left: ValidType, right: ValidType = None) -> None:
         self.cond = cond
         self.left = to_aida_obj(left)
-        self.right = to_aida_obj(right)
+        self.right = to_aida_obj(right or Empty)
 
     def __hash__(self) -> int:
         return hash((self.__class__.__name__, self.cond, self.left, self.right))
@@ -186,23 +186,12 @@ class Choices(AidaObj):
         return cast(AidaObj, _update_ctx(ctx, self, ret))
 
 
-class Alt(AidaObj):
-    def __init__(self, main: ValidType, alt: ValidType = None) -> None:
-        self.main = to_aida_obj(main)
-        self.alt = to_aida_obj(alt or Empty)
-
-    def __hash__(self) -> int:
-        return hash((self.__class__.__name__, self.main, self.alt))
-
-    def render(self, ctx: Ctx) -> AidaObj:
-        valid_obj = self.alt if ctx.contains(self.main) else self.main
-        ret = valid_obj.render(ctx) if isinstance(
-            valid_obj, AidaObj) else valid_obj
-        return cast(AidaObj, _update_ctx(ctx, valid_obj, self, ret))
+def create_alt(ctx: Ctx, left, right: ValidType = None) -> Branch:
+    return Branch(left.in_ctx(ctx), left, right or Empty)
 
 
-def create_ref(absolute: ValidType, alts: List[ValidType]) -> Alt:
-    return Alt(main=absolute, alt=Choices(alts))
+def create_ref(ctx: Ctx, absolute, alts: List[ValidType]) -> Branch:
+    return create_alt(ctx, left=absolute, right=Choices(alts))
 
 
 class Enumeration(AidaObj):

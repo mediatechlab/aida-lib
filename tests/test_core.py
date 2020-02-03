@@ -33,7 +33,7 @@ def test_alt():
 
     other_names = aida.Choices(['Bob', 'Chris'], seed=42)
     ctx = aida.Ctx()
-    alt = aida.Alt(x, other_names)
+    alt = aida.create_alt(ctx, x, other_names)
 
     assert aida.render(alt, ctx) == 'Alice'
     assert aida.render(alt, ctx) == 'Bob'
