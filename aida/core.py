@@ -5,35 +5,40 @@ __all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty']
 
 BasicTypes = (str, int, float, bool)
 PrimaryType = Union[str, int, float, bool]
-ValidType = Union['Operand', PrimaryType]
+ValidType = Union['Node', PrimaryType]
 
 
-def to_operand(obj: ValidType) -> 'Operand':
-    if isinstance(obj, Operand):
+def to_node(obj: ValidType) -> 'Node':
+    if isinstance(obj, Node):
         return obj
     elif isinstance(obj, BasicTypes):
         return Const(obj)
     else:
-        raise Exception(f'Impossible to cast {obj} to Operand')
+        raise Exception(f'Impossible to cast {obj} to Node')
 
 
 class Ctx(object):
+    '''
+    Context is used to store items that have been rendered.
+    One common application is checking if something is in context.
+    '''
+
     def __init__(self) -> None:
         self.store = set()
 
     def __repr__(self) -> str:
         return f'Ctx(items={len(self.store)})'
 
-    def contains(self, obj: 'Operand') -> bool:
+    def contains(self, obj: 'Node') -> bool:
         return hash(obj) in self.store
 
-    def add(self, obj: 'Operand') -> 'Ctx':
+    def add(self, obj: 'Node') -> 'Ctx':
         self.store.add(hash(obj))
         return self
 
 
-def _render(obj: ValidType, ctx: Ctx) -> Union['Operand', str]:
-    if isinstance(obj, Operand):
+def _render(obj: ValidType, ctx: Ctx) -> Union['Node', str]:
+    if isinstance(obj, Node):
         return render(obj.render(ctx), ctx)
     else:
         return str(obj)
@@ -45,12 +50,16 @@ def render(obj: ValidType, ctx: Ctx = None) -> str:
 
 def _update_ctx(ctx: Ctx, *items: ValidType) -> ValidType:
     for item in items:
-        if isinstance(item, Operand):
+        if isinstance(item, Node):
             ctx.add(item)
     return items[-1]
 
 
-class Operand(object):
+class Node(object):
+    '''
+    Basic building block for the render tree.
+    '''
+
     def __init__(self, value: Union[ValidType, 'Operation']) -> None:
         self.value = value
 
@@ -63,49 +72,53 @@ class Operand(object):
     def render(self, ctx: Ctx) -> ValidType:
         if isinstance(self.value, Operation):
             return self.value.eval(ctx)
-        elif isinstance(self.value, Operand):
+        elif isinstance(self.value, Node):
             return self.value.render(ctx)
         else:
             return self.value
 
-    def __and__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('and_', self, to_operand(other)))
+    def __and__(self, other: ValidType) -> 'Node':
+        return Node(Operation('and_', self, to_node(other)))
 
-    def __gt__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('gt', self, to_operand(other)))
+    def __gt__(self, other: ValidType) -> 'Node':
+        return Node(Operation('gt', self, to_node(other)))
 
-    def __ge__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('ge', self, to_operand(other)))
+    def __ge__(self, other: ValidType) -> 'Node':
+        return Node(Operation('ge', self, to_node(other)))
 
-    def __lt__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('lt', self, to_operand(other)))
+    def __lt__(self, other: ValidType) -> 'Node':
+        return Node(Operation('lt', self, to_node(other)))
 
-    def __le__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('le', self, to_operand(other)))
+    def __le__(self, other: ValidType) -> 'Node':
+        return Node(Operation('le', self, to_node(other)))
 
-    def __eq__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('eq', self, to_operand(other)))
+    def __eq__(self, other: ValidType) -> 'Node':
+        return Node(Operation('eq', self, to_node(other)))
 
-    def __ne__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('ne', self, to_operand(other)))
+    def __ne__(self, other: ValidType) -> 'Node':
+        return Node(Operation('ne', self, to_node(other)))
 
-    def __invert__(self) -> 'Operand':
-        return Operand(Operation('not', self))
+    def __invert__(self) -> 'Node':
+        return Node(Operation('not', self))
 
-    def __add__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('add', self, to_operand(other)))
+    def __add__(self, other: ValidType) -> 'Node':
+        return Node(Operation('add', self, to_node(other)))
 
-    def __or__(self, other: ValidType) -> 'Operand':
-        return Operand(Operation('or', self, to_operand(other)))
+    def __or__(self, other: ValidType) -> 'Node':
+        return Node(Operation('or', self, to_node(other)))
 
-    def in_ctx(self) -> 'Operand':
-        return Operand(Operation('in_ctx', self))
+    def in_ctx(self) -> 'Node':
+        return Node(Operation('in_ctx', self))
 
 
 class Operation(object):
+    '''
+    @note: should an Operation be a Node?
+    '''
+
     def __init__(self, op: str, *operands: ValidType) -> None:
         self.op = op
-        self.operands = tuple(map(to_operand, operands))
+        self.operands = tuple(map(to_node, operands))
 
     def __hash__(self) -> int:
         return hash((self.op, self.operands))
@@ -118,7 +131,7 @@ class Operation(object):
     def _unwrap(op: ValidType, ctx: Ctx) -> ValidType:
         if isinstance(op, Operation):
             return Operation._unwrap(op.eval(ctx), ctx)
-        elif isinstance(op, Operand):
+        elif isinstance(op, Node):
             return Operation._unwrap(op.value, ctx)
         else:
             return op
@@ -143,7 +156,7 @@ class Operation(object):
             return getattr(operator, self.op)(*values)
 
 
-class Const(Operand):
+class Const(Node):
     def __init__(self, value: PrimaryType) -> None:
         super().__init__(value)
 
@@ -160,7 +173,7 @@ class Const(Operand):
 Empty = Const('')
 
 
-class Var(Operand):
+class Var(Node):
     def __init__(self, name: str = None) -> None:
         super().__init__(Empty)
         self.name = name

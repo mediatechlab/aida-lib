@@ -1,13 +1,13 @@
 from typing import List, cast
 
-from .core import Ctx, Empty, Operand, ValidType, _update_ctx, to_operand
+from .core import Ctx, Empty, Node, ValidType, _update_ctx, to_node
 
 __all__ = ['Enumeration']
 
 
-class Enumeration(Operand):
+class Enumeration(Node):
     def __init__(self, *aida_objs: ValidType, lang='en-US') -> None:
-        self.aida_objs = tuple(map(to_operand, aida_objs))
+        self.aida_objs = tuple(map(to_node, aida_objs))
         assert lang == 'en-US', f'Unsupported language {lang}'
 
     def __hash__(self) -> int:
@@ -16,7 +16,7 @@ class Enumeration(Operand):
     def __repr__(self) -> str:
         return f'Enumeration({self.aida_objs})'
 
-    def _render(self, ctx: Ctx, n_items: int, items: List[Operand]):
+    def _render(self, ctx: Ctx, n_items: int, items: List[Node]):
         if len(items) == 0:
             return Empty
 

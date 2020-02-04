@@ -2,15 +2,15 @@
 import random
 from typing import cast
 
-from .core import Ctx, ValidType, _update_ctx, to_operand, Operand
+from .core import Ctx, ValidType, _update_ctx, to_node, Node
 
 
 __all__ = ['Choices']
 
 
-class Choices(Operand):
+class Choices(Node):
     def __init__(self, *items: ValidType, seed=None) -> None:
-        self.items = tuple(map(to_operand, items))
+        self.items = tuple(map(to_node, items))
         if seed is not None:
             random.seed(seed)
 
