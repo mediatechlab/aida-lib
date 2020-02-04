@@ -1,4 +1,4 @@
-from typing import List, cast
+from typing import List
 
 from .core import Ctx, Empty, Node, ValidType, _update_ctx, to_node
 

@@ -21,7 +21,7 @@ class Branch(Node):
 
     def render(self, ctx: Ctx) -> ValidType:
         alternative = self.left if cast(
-            Operation, self.cond.value).eval(ctx) else self.right
+            Operation, self.cond.value).render(ctx) else self.right
         ret = alternative.render(ctx)
         return _update_ctx(ctx, self, ret)
 

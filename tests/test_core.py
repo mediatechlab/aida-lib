@@ -71,10 +71,10 @@ def test_arithmetic():
     cond = (x + 1) > 2
 
     x.assign(2)
-    assert cast(Operation, cond.value).eval(ctx)
+    assert cast(Operation, cond.value).render(ctx)
 
     x.assign(1)
-    assert not cast(Operation, cond.value).eval(ctx)
+    assert not cast(Operation, cond.value).render(ctx)
 
 
 def test_in_ctx():

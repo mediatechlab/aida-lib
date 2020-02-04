@@ -1,8 +1,6 @@
-
 import random
-from typing import cast
 
-from .core import Ctx, ValidType, _update_ctx, to_node, Node
+from .core import Ctx, Node, ValidType, _update_ctx, to_node
 
 
 __all__ = ['Choices']
