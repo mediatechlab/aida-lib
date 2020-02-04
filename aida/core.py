@@ -1,9 +1,7 @@
 import operator
-import random
-from typing import Any, List, Tuple, Union, cast
+from typing import Any, List, Union, cast
 
-__all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty', 'Choices',
-           'create_alt', 'create_ref', 'Enumeration', 'Branch']
+__all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty']
 
 BasicTypes = (str, int, float, bool)
 PrimaryType = Union[str, int, float, bool]
@@ -179,24 +177,6 @@ class Const(Operand):
 Empty = Const('')
 
 
-class Branch(AidaObj):
-    def __init__(self, cond: Operand, left: ValidType, right: ValidType = None) -> None:
-        self.cond = cond
-        self.left = to_operand(left)
-        self.right = to_aida_obj(right or Empty)
-
-    def __hash__(self) -> int:
-        return hash((self.__class__.__name__, self.cond, self.left, self.right))
-
-    def __repr__(self) -> str:
-        return f'Branch({self.cond} ? {self.left} : {self.right})'
-
-    def render(self, ctx: Ctx) -> AidaObj:
-        alternative = self.left if self.cond.value.eval() else self.right
-        ret = alternative.render(ctx)
-        return cast(AidaObj, _update_ctx(ctx, self, ret))
-
-
 class Var(Operand):
     def __init__(self, name: str = None) -> None:
         super().__init__()
@@ -215,58 +195,3 @@ class Var(Operand):
     def render(self, ctx: Ctx) -> str:
         assert self.value is not None
         return cast(str, _update_ctx(ctx, self, str(self.value)))
-
-
-class Choices(AidaObj):
-    def __init__(self, items: List[ValidType], seed=None) -> None:
-        self.items = tuple(map(to_aida_obj, items))
-        if seed is not None:
-            random.seed(seed)
-
-    def __hash__(self) -> int:
-        return hash((self.__class__.__name__, self.items))
-
-    def __repr__(self) -> str:
-        return f'Choices({self.items})'
-
-    def render(self, ctx: Ctx) -> AidaObj:
-        ret = random.choice(self.items)
-        return cast(AidaObj, _update_ctx(ctx, self, ret))
-
-
-def create_alt(ctx: Ctx, left: ValidType, right: ValidType = None) -> Branch:
-    left_ = to_operand(left)
-    return Branch(~left_.in_ctx(ctx), left_, right or Empty)
-
-
-def create_ref(ctx: Ctx, absolute, alts: List[ValidType]) -> Branch:
-    return create_alt(ctx, left=absolute, right=Choices(alts))
-
-
-class Enumeration(AidaObj):
-    def __init__(self, aida_objs: List[ValidType], lang='en-US') -> None:
-        self.aida_objs = tuple(map(to_aida_obj, aida_objs))
-        assert lang == 'en-US', f'Unsupported language {lang}'
-
-    def __hash__(self) -> int:
-        return hash(self.aida_objs)
-
-    def __repr__(self) -> str:
-        return f'Enumeration({self.aida_objs})'
-
-    def _render(self, ctx: Ctx, n_items: int, items: Tuple[AidaObj]) -> AidaObj:
-        if len(items) == 0:
-            return Empty
-
-        elif len(items) == 1:
-            return items[0]
-
-        elif len(items) == 2:
-            return (items[0] | 'and' if n_items == 2 else items[0] + ', and') | items[1]
-
-        else:
-            return items[0] + ',' | self._render(ctx, n_items, items[1:])
-
-    def render(self, ctx: Ctx) -> AidaObj:
-        ret = self._render(ctx, len(self.aida_objs), self.aida_objs)
-        return cast(AidaObj, _update_ctx(ctx, self, ret))
