@@ -1,13 +1,13 @@
-from typing import Tuple, cast
+from typing import List, cast
 
-from .core import AidaObj, Ctx, Empty, ValidType, _update_ctx, to_aida_obj
+from .core import AidaObj, Ctx, Empty, Operand, ValidType, _update_ctx, to_operand
 
 __all__ = ['Enumeration']
 
 
-class Enumeration(AidaObj):
+class Enumeration(Operand):
     def __init__(self, *aida_objs: ValidType, lang='en-US') -> None:
-        self.aida_objs = tuple(map(to_aida_obj, aida_objs))
+        self.aida_objs = tuple(map(to_operand, aida_objs))
         assert lang == 'en-US', f'Unsupported language {lang}'
 
     def __hash__(self) -> int:
@@ -16,19 +16,20 @@ class Enumeration(AidaObj):
     def __repr__(self) -> str:
         return f'Enumeration({self.aida_objs})'
 
-    def _render(self, ctx: Ctx, n_items: int, items: Tuple[AidaObj]) -> AidaObj:
+    def _render(self, ctx: Ctx, n_items: int, items: List[Operand]):
         if len(items) == 0:
             return Empty
 
         elif len(items) == 1:
-            return items[0]
+            return items[0].render(ctx)
 
         elif len(items) == 2:
-            return (items[0] | 'and' if n_items == 2 else items[0] + ', and') | items[1]
+            item0 = items[0].render(ctx)
+            return ((item0 + ' and ') if n_items == 2 else (item0 + ', and ')) + items[1].render(ctx)
 
         else:
-            return items[0] + ',' | self._render(ctx, n_items, items[1:])
+            return (items[0].render(ctx) + ', ') + self._render(ctx, n_items, items[1:])
 
     def render(self, ctx: Ctx) -> AidaObj:
-        ret = self._render(ctx, len(self.aida_objs), self.aida_objs)
+        ret = self._render(ctx, len(self.aida_objs), list(self.aida_objs))
         return cast(AidaObj, _update_ctx(ctx, self, ret))

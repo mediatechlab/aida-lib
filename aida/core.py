@@ -42,14 +42,8 @@ class Ctx(object):
 
 
 class AidaObj(object):
-    def render(self, ctx: Ctx) -> 'AidaObj':
+    def render(self, ctx: Ctx) -> ValidType:
         raise NotImplementedError()
-
-    def __or__(self, other: ValidType) -> 'Node':
-        return Node(self, other, sep=' ')
-
-    def __add__(self, other: ValidType) -> 'Node':
-        return Node(self, other, sep='')
 
 
 def _render(aida_obj: ValidType, ctx: Ctx = None) -> Union[AidaObj, str]:
@@ -71,22 +65,6 @@ def _update_ctx(ctx: Ctx, *items: ValidType) -> ValidType:
     return items[-1]
 
 
-class Node(AidaObj):
-    def __init__(self, *items: ValidType, sep: str = ' ') -> None:
-        self.items = tuple(map(to_aida_obj, items))
-        self.sep = sep
-
-    def __hash__(self) -> int:
-        return hash(self.items)
-
-    def __repr__(self) -> str:
-        return f'Node(items={self.items}, sep={self.sep})'
-
-    def render(self, ctx: Ctx) -> str:
-        ret = self.sep.join(render(obj, ctx) for obj in self.items)
-        return cast(str, _update_ctx(ctx, self, ret))
-
-
 class Operand(AidaObj):
     def __init__(self, value: Any = None) -> None:
         self.value = value
@@ -96,6 +74,14 @@ class Operand(AidaObj):
 
     def __repr__(self) -> str:
         return f'Op[{self.value}]'
+
+    def render(self, ctx: Ctx):
+        if isinstance(self.value, Operation):
+            return self.value.eval()
+        elif isinstance(self.value, AidaObj):
+            return self.value.render(ctx)
+        else:
+            return self.value
 
     def __and__(self, other: ValidType) -> 'Operand':
         return Operand(Operation('and_', self, to_operand(other)))
@@ -120,6 +106,12 @@ class Operand(AidaObj):
 
     def __invert__(self) -> 'Operand':
         return Operand(Operation('not', self))
+
+    def __add__(self, other: ValidType) -> 'Operand':
+        return Operand(Operation('add', self, to_operand(other)))
+
+    def __or__(self, other: ValidType) -> 'Operand':
+        return Operand(Operation('or', self, to_operand(other)))
 
     def in_ctx(self, ctx: Ctx) -> 'Operand':
         return Operand(Operation('in_ctx', self, Operand(ctx)))
@@ -148,13 +140,19 @@ class Operation(object):
 
     def eval(self) -> ValidType:
         required_operands = 2 if self.op in (
-            'gt', 'ge', 'lt', 'le', 'eq', 'ne', 'and_', 'in_ctx') else 1
+            'gt', 'ge', 'lt', 'le', 'eq', 'ne', 'and_', 'in_ctx', 'add', 'or') else 1
         assert len(self.operands) == required_operands
 
         if self.op == 'in_ctx':
             return cast(Ctx, self.operands[1].value).contains(self.operands[0])
         elif self.op == 'not':
             return not self._unwrap(self.operands[0])
+        elif self.op == 'or':
+            values = list(map(Operation._unwrap, self.operands))
+            if isinstance(values[0], bool) and isinstance(values[1], bool):
+                return values[0] or values[1]
+            else:
+                return values[0] + ' ' + values[1]
         else:
             values = map(Operation._unwrap, self.operands)
             return getattr(operator, self.op)(*values)

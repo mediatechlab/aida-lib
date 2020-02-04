@@ -62,6 +62,17 @@ def test_branch():
     assert aida.render(branch) == 'not greater'
 
 
+def test_arithmetic():
+    x = aida.Var('x')
+    cond = (x + 1) > 2
+
+    x.assign(2)
+    assert cond.value.eval()
+
+    x.assign(1)
+    assert not cond.value.eval()
+
+
 def test_in_ctx():
     ctx = aida.Ctx()
     k = aida.Const('Alice')
