@@ -2,15 +2,15 @@
 import random
 from typing import cast
 
-from .core import AidaObj, Ctx, ValidType, _update_ctx, to_aida_obj
+from .core import Ctx, ValidType, _update_ctx, to_operand, Operand
 
 
 __all__ = ['Choices']
 
 
-class Choices(AidaObj):
+class Choices(Operand):
     def __init__(self, *items: ValidType, seed=None) -> None:
-        self.items = tuple(map(to_aida_obj, items))
+        self.items = tuple(map(to_operand, items))
         if seed is not None:
             random.seed(seed)
 
@@ -20,6 +20,6 @@ class Choices(AidaObj):
     def __repr__(self) -> str:
         return f'Choices({self.items})'
 
-    def render(self, ctx: Ctx) -> AidaObj:
+    def render(self, ctx: Ctx) -> ValidType:
         ret = random.choice(self.items)
-        return cast(AidaObj, _update_ctx(ctx, self, ret))
+        return _update_ctx(ctx, self, ret)

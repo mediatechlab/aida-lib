@@ -1,4 +1,7 @@
+from typing import cast
+
 import aida
+from aida.core import Operation
 
 
 def test_render_simple_choice():
@@ -33,7 +36,7 @@ def test_alt():
 
     other_names = aida.Choices('Bob', 'Chris', seed=42)
     ctx = aida.Ctx()
-    alt = aida.create_alt(ctx, x, other_names)
+    alt = aida.create_alt(x, other_names)
 
     assert aida.render(alt, ctx) == 'Alice'
     assert aida.render(alt, ctx) == 'Bob'
@@ -63,22 +66,23 @@ def test_branch():
 
 
 def test_arithmetic():
+    ctx = aida.Ctx()
     x = aida.Var('x')
     cond = (x + 1) > 2
 
     x.assign(2)
-    assert cond.value.eval()
+    assert cast(Operation, cond.value).eval(ctx)
 
     x.assign(1)
-    assert not cond.value.eval()
+    assert not cast(Operation, cond.value).eval(ctx)
 
 
 def test_in_ctx():
     ctx = aida.Ctx()
     k = aida.Const('Alice')
-    branch = aida.Branch(k.in_ctx(ctx), 'yes', 'no')
+    branch = aida.Branch(k.in_ctx(), 'yes', 'no')
 
-    assert aida.render(branch) == 'no'
+    assert aida.render(branch, ctx=ctx) == 'no'
 
     k.render(ctx)
-    assert aida.render(branch) == 'yes'
+    assert aida.render(branch, ctx=ctx) == 'yes'

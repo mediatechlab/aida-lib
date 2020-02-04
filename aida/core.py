@@ -1,20 +1,11 @@
 import operator
-from typing import Any, Union, cast
+from typing import Union, cast
 
 __all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty']
 
 BasicTypes = (str, int, float, bool)
 PrimaryType = Union[str, int, float, bool]
-ValidType = Union['AidaObj', PrimaryType]
-
-
-def to_aida_obj(obj: ValidType) -> 'AidaObj':
-    if isinstance(obj, AidaObj):
-        return obj
-    elif isinstance(obj, BasicTypes):
-        return Const(obj)
-    else:
-        raise Exception(f'Impossible to cast {obj} to AidaObj')
+ValidType = Union['Operand', PrimaryType]
 
 
 def to_operand(obj: ValidType) -> 'Operand':
@@ -33,40 +24,34 @@ class Ctx(object):
     def __repr__(self) -> str:
         return f'Ctx(items={len(self.store)})'
 
-    def contains(self, aida_obj: 'AidaObj') -> bool:
-        return hash(aida_obj) in self.store
+    def contains(self, obj: 'Operand') -> bool:
+        return hash(obj) in self.store
 
-    def add(self, aida_obj: 'AidaObj') -> 'Ctx':
-        self.store.add(hash(aida_obj))
+    def add(self, obj: 'Operand') -> 'Ctx':
+        self.store.add(hash(obj))
         return self
 
 
-class AidaObj(object):
-    def render(self, ctx: Ctx) -> ValidType:
-        raise NotImplementedError()
-
-
-def _render(aida_obj: ValidType, ctx: Ctx = None) -> Union[AidaObj, str]:
-    ctx = ctx or Ctx()
-    if isinstance(aida_obj, AidaObj):
-        return render(aida_obj.render(ctx), ctx)
+def _render(obj: ValidType, ctx: Ctx) -> Union['Operand', str]:
+    if isinstance(obj, Operand):
+        return render(obj.render(ctx), ctx)
     else:
-        return str(aida_obj)
+        return str(obj)
 
 
-def render(aida_obj: ValidType, ctx: Ctx = None) -> str:
-    return cast(str, _render(aida_obj, ctx))
+def render(obj: ValidType, ctx: Ctx = None) -> str:
+    return cast(str, _render(obj, ctx or Ctx()))
 
 
 def _update_ctx(ctx: Ctx, *items: ValidType) -> ValidType:
     for item in items:
-        if isinstance(item, AidaObj):
+        if isinstance(item, Operand):
             ctx.add(item)
     return items[-1]
 
 
-class Operand(AidaObj):
-    def __init__(self, value: Any = None) -> None:
+class Operand(object):
+    def __init__(self, value: Union[ValidType, 'Operation']) -> None:
         self.value = value
 
     def __hash__(self) -> int:
@@ -75,10 +60,10 @@ class Operand(AidaObj):
     def __repr__(self) -> str:
         return f'Op[{self.value}]'
 
-    def render(self, ctx: Ctx):
+    def render(self, ctx: Ctx) -> ValidType:
         if isinstance(self.value, Operation):
-            return self.value.eval()
-        elif isinstance(self.value, AidaObj):
+            return self.value.eval(ctx)
+        elif isinstance(self.value, Operand):
             return self.value.render(ctx)
         else:
             return self.value
@@ -113,14 +98,14 @@ class Operand(AidaObj):
     def __or__(self, other: ValidType) -> 'Operand':
         return Operand(Operation('or', self, to_operand(other)))
 
-    def in_ctx(self, ctx: Ctx) -> 'Operand':
-        return Operand(Operation('in_ctx', self, Operand(ctx)))
+    def in_ctx(self) -> 'Operand':
+        return Operand(Operation('in_ctx', self))
 
 
 class Operation(object):
-    def __init__(self, op: str, *operands: Operand) -> None:
+    def __init__(self, op: str, *operands: ValidType) -> None:
         self.op = op
-        self.operands = operands
+        self.operands = tuple(map(to_operand, operands))
 
     def __hash__(self) -> int:
         return hash((self.op, self.operands))
@@ -130,31 +115,31 @@ class Operation(object):
                 else f'{self.operands[0]} {self.op} {self.operands[1]}')
 
     @staticmethod
-    def _unwrap(op: Any) -> ValidType:
+    def _unwrap(op: ValidType, ctx: Ctx) -> ValidType:
         if isinstance(op, Operation):
-            return Operation._unwrap(op.eval())
+            return Operation._unwrap(op.eval(ctx), ctx)
         elif isinstance(op, Operand):
-            return Operation._unwrap(op.value)
+            return Operation._unwrap(op.value, ctx)
         else:
             return op
 
-    def eval(self) -> ValidType:
+    def eval(self, ctx: Ctx) -> ValidType:
         required_operands = 2 if self.op in (
-            'gt', 'ge', 'lt', 'le', 'eq', 'ne', 'and_', 'in_ctx', 'add', 'or') else 1
+            'gt', 'ge', 'lt', 'le', 'eq', 'ne', 'and_', 'add', 'or') else 1
         assert len(self.operands) == required_operands
 
         if self.op == 'in_ctx':
-            return cast(Ctx, self.operands[1].value).contains(self.operands[0])
+            return ctx.contains(self.operands[0])
         elif self.op == 'not':
-            return not self._unwrap(self.operands[0])
+            return not self._unwrap(self.operands[0], ctx)
         elif self.op == 'or':
-            values = list(map(Operation._unwrap, self.operands))
+            values = [Operation._unwrap(op, ctx) for op in self.operands]
             if isinstance(values[0], bool) and isinstance(values[1], bool):
                 return values[0] or values[1]
             else:
                 return values[0] + ' ' + values[1]
         else:
-            values = map(Operation._unwrap, self.operands)
+            values = (Operation._unwrap(op, ctx) for op in self.operands)
             return getattr(operator, self.op)(*values)
 
 
@@ -177,7 +162,7 @@ Empty = Const('')
 
 class Var(Operand):
     def __init__(self, name: str = None) -> None:
-        super().__init__()
+        super().__init__(Empty)
         self.name = name
 
     def __hash__(self) -> int:

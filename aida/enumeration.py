@@ -1,6 +1,6 @@
 from typing import List, cast
 
-from .core import AidaObj, Ctx, Empty, Operand, ValidType, _update_ctx, to_operand
+from .core import Ctx, Empty, Operand, ValidType, _update_ctx, to_operand
 
 __all__ = ['Enumeration']
 
@@ -30,6 +30,6 @@ class Enumeration(Operand):
         else:
             return (items[0].render(ctx) + ', ') + self._render(ctx, n_items, items[1:])
 
-    def render(self, ctx: Ctx) -> AidaObj:
+    def render(self, ctx: Ctx) -> ValidType:
         ret = self._render(ctx, len(self.aida_objs), list(self.aida_objs))
-        return cast(AidaObj, _update_ctx(ctx, self, ret))
+        return _update_ctx(ctx, self, ret)
