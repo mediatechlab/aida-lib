@@ -1,5 +1,5 @@
 import operator
-from typing import Any, List, Union, cast
+from typing import Any, Union, cast
 
 __all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty']
 
@@ -46,10 +46,10 @@ class AidaObj(object):
         raise NotImplementedError()
 
     def __or__(self, other: ValidType) -> 'Node':
-        return Node([self, other], sep=' ')
+        return Node(self, other, sep=' ')
 
     def __add__(self, other: ValidType) -> 'Node':
-        return Node([self, other], sep='')
+        return Node(self, other, sep='')
 
 
 def _render(aida_obj: ValidType, ctx: Ctx = None) -> Union[AidaObj, str]:
@@ -72,7 +72,7 @@ def _update_ctx(ctx: Ctx, *items: ValidType) -> ValidType:
 
 
 class Node(AidaObj):
-    def __init__(self, items: List[ValidType], sep: str = ' ') -> None:
+    def __init__(self, *items: ValidType, sep: str = ' ') -> None:
         self.items = tuple(map(to_aida_obj, items))
         self.sep = sep
 

@@ -6,7 +6,7 @@ def test_render_simple_choice():
     x.assign('Alice')
     y = aida.Var()
     y.assign('Bob')
-    choices = aida.Choices([x, y], seed=42)
+    choices = aida.Choices(x, y, seed=42)
 
     assert aida.render(choices) == 'Alice'
 
@@ -31,7 +31,7 @@ def test_alt():
     x = aida.Var('name')
     x.assign('Alice')
 
-    other_names = aida.Choices(['Bob', 'Chris'], seed=42)
+    other_names = aida.Choices('Bob', 'Chris', seed=42)
     ctx = aida.Ctx()
     alt = aida.create_alt(ctx, x, other_names)
 
@@ -40,10 +40,10 @@ def test_alt():
 
 
 def test_enumerate():
-    assert aida.render(aida.Enumeration(['Alice'])) == 'Alice'
-    assert aida.render(aida.Enumeration(['Alice', 'Bob'])) == 'Alice and Bob'
+    assert aida.render(aida.Enumeration('Alice')) == 'Alice'
+    assert aida.render(aida.Enumeration('Alice', 'Bob')) == 'Alice and Bob'
     assert aida.render(aida.Enumeration(
-        ['Alice', 'Bob', 'Chris'])) == 'Alice, Bob, and Chris'
+        'Alice', 'Bob', 'Chris')) == 'Alice, Bob, and Chris'
 
 
 def test_branch():

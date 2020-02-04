@@ -1,4 +1,4 @@
-from typing import List, Tuple, cast
+from typing import Tuple, cast
 
 from .core import AidaObj, Ctx, Empty, ValidType, _update_ctx, to_aida_obj
 
@@ -6,7 +6,7 @@ __all__ = ['Enumeration']
 
 
 class Enumeration(AidaObj):
-    def __init__(self, aida_objs: List[ValidType], lang='en-US') -> None:
+    def __init__(self, *aida_objs: ValidType, lang='en-US') -> None:
         self.aida_objs = tuple(map(to_aida_obj, aida_objs))
         assert lang == 'en-US', f'Unsupported language {lang}'
 

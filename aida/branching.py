@@ -1,4 +1,4 @@
-from typing import List, cast
+from typing import cast
 
 from .choices import Choices
 from .core import (
@@ -31,5 +31,5 @@ def create_alt(ctx: Ctx, left: ValidType, right: ValidType = None) -> Branch:
     return Branch(~left_.in_ctx(ctx), left_, right or Empty)
 
 
-def create_ref(ctx: Ctx, absolute, alts: List[ValidType]) -> Branch:
-    return create_alt(ctx, left=absolute, right=Choices(alts))
+def create_ref(ctx: Ctx, absolute, *alts: ValidType) -> Branch:
+    return create_alt(ctx, left=absolute, right=Choices(*alts))
