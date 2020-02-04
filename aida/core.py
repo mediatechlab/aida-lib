@@ -1,5 +1,5 @@
 import operator
-from typing import Union, cast
+from typing import List, Union, cast
 
 __all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty']
 
@@ -108,6 +108,9 @@ class Node(object):
     def in_ctx(self) -> 'Node':
         return Node(Operation('in_ctx', self))
 
+    def to_phrase(self) -> 'Node':
+        return Node(Operation('to_phrase', self))
+
 
 class Operation(Node):
     '''
@@ -117,7 +120,7 @@ class Operation(Node):
     def __init__(self, op: str, *operands: ValidType) -> None:
         super().__init__(Empty)
         self.op = op
-        self.operands = tuple(map(to_node, operands))
+        self.operands = tuple(to_node(n) for n in operands)
 
     def __hash__(self) -> int:
         return hash((self.op, self.operands))
@@ -141,6 +144,13 @@ class Operation(Node):
                 return values[0] or values[1]
             else:
                 return values[0] + ' ' + values[1]
+        elif self.op == 'to_phrase':
+            values = [_render(op, ctx) for op in self.operands]
+            ret = str(values[0]).capitalize() + \
+                ''.join(cast(List[str], values[1:]))
+            if not ret.endswith('.'):
+                ret += '.'
+            return ret
         else:
             values = (_render(op, ctx) for op in self.operands)
             return getattr(operator, self.op)(*values)

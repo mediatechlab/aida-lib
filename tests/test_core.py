@@ -86,3 +86,21 @@ def test_in_ctx():
 
     k.render(ctx)
     assert aida.render(branch, ctx=ctx) == 'yes'
+
+
+def test_sentence_ctx():
+    ref = aida.create_ref('Geralt of Rivia', 'Geralt')
+    sentence = aida.Empty + 'Toss a coin to' | ref + '.'
+
+    ctx = aida.Ctx()
+    assert aida.render(sentence, ctx=ctx) == 'Toss a coin to Geralt of Rivia.'
+    assert aida.render(sentence, ctx=ctx) == 'Toss a coin to Geralt.'
+    assert aida.render(sentence, ctx=ctx) == 'Toss a coin to Geralt.'
+
+    sentence2 = ref | 'is nice.'
+    assert aida.render(sentence2, ctx=ctx) == 'Geralt is nice.'
+
+
+def test_phrase():
+    phrase = (aida.Empty + 'this is a phrase').to_phrase()
+    assert aida.render(phrase) == 'This is a phrase.'
