@@ -33,3 +33,7 @@ def create_alt(left: ValidType, right: ValidType = None) -> Branch:
 
 def create_ref(absolute, *alts: ValidType) -> Branch:
     return create_alt(left=absolute, right=Choices(*alts))
+
+
+def create_once(node: ValidType) -> Branch:
+    return create_alt(node, Empty)
