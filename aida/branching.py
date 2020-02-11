@@ -2,9 +2,9 @@ from typing import cast
 
 from .choices import Choices
 from .core import (
-    Ctx, Empty, Node, Operation, ValidType, _update_ctx, to_node)
+    Ctx, Empty, Node, Operation, ValidType, Var, _update_ctx, to_node)
 
-__all__ = ['Branch', 'create_alt', 'create_ref']
+__all__ = ['Branch', 'create_alt', 'create_ref', 'create_match', 'create_once']
 
 
 class Branch(Node):
@@ -20,8 +20,9 @@ class Branch(Node):
         return f'Branch({self.cond} ? {self.left} : {self.right})'
 
     def render(self, ctx: Ctx) -> ValidType:
-        alternative = self.left if cast(
-            Operation, self.cond.value).render(ctx) else self.right
+        cond_eval = cast(Operation, self.cond.value).render(
+            ctx) if isinstance(self.cond.value, Operation) else self.cond.value
+        alternative = self.left if cond_eval else self.right
         ret = alternative.render(ctx)
         return _update_ctx(ctx, self, ret)
 
@@ -37,3 +38,10 @@ def create_ref(absolute, *alts: ValidType) -> Branch:
 
 def create_once(node: ValidType) -> Branch:
     return create_alt(node, Empty)
+
+
+def create_match(label_var: Var, default: ValidType = None, **matches) -> Node:
+    b = to_node(default or Empty)
+    for label_value, output in matches.items():
+        b = Branch(label_var == label_value, output, b)
+    return b

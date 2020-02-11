@@ -24,16 +24,14 @@ def test_concat():
     ctx = aida.Ctx()
 
     node = x | 'is a' | sent | 'person.'
-    assert node.render(ctx) == 'Alice is a good person.'
+    assert aida.render(node, ctx) == 'Alice is a good person.'
 
     x.assign('Bob')
-    assert node.render(ctx) == 'Bob is a good person.'
+    assert aida.render(node, ctx) == 'Bob is a good person.'
 
 
 def test_alt():
-    x = aida.Var('name')
-    x.assign('Alice')
-
+    x = aida.Const('Alice')
     other_names = aida.Choices('Bob', 'Chris', seed=42)
     ctx = aida.Ctx()
     alt = aida.create_alt(x, other_names)
@@ -104,3 +102,15 @@ def test_sentence_ctx():
 def test_phrase():
     phrase = (aida.Empty + 'this is a phrase').to_phrase()
     assert aida.render(phrase) == 'This is a phrase.'
+
+
+def test_injector():
+    a = aida.Var('a')
+    b = aida.Var('b')
+
+    node = a | b
+    inj = aida.Injector([a, b], node)
+
+    inj.assign([{'a': 'a1', 'b': 'b1'}, {'a': 'a2', 'b': 'b2'}])
+    assert aida.render(inj) == 'a1 b1'
+    assert aida.render(inj) == 'a2 b2'

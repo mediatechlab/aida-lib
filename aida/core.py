@@ -1,7 +1,8 @@
 import operator
-from typing import List, Union, cast
+from typing import List, Union, cast, Dict
 
-__all__ = ['Ctx', 'render', 'Const', 'Var', 'Empty']
+__all__ = ['Ctx', 'render', 'Const', 'Var',
+           'Empty', 'Injector', 'Repeat', 'Injector']
 
 BasicTypes = (str, int, float, bool)
 PrimaryType = Union[str, int, float, bool]
@@ -151,6 +152,8 @@ class Operation(Node):
             if not ret.endswith('.'):
                 ret += '.'
             return ret
+        elif self.op == 'noop':
+            return _render(self.operands[0], ctx)
         else:
             values = (_render(op, ctx) for op in self.operands)
             return getattr(operator, self.op)(*values)
@@ -168,7 +171,7 @@ class Const(Node):
         return hash(self.value)
 
     def __repr__(self) -> str:
-        return f'Const({self.value})'
+        return f'Const({self.value})' if self.value != '' else 'empty'
 
     def render(self, ctx: Ctx) -> str:
         return cast(str, _update_ctx(ctx, self, str(self.value)))
@@ -187,7 +190,7 @@ class Var(Node):
         self.name = name
 
     def __hash__(self) -> int:
-        return hash((self.__class__.__name__, self.name))
+        return hash((self.__class__.__name__, self.name, self.value))
 
     def __repr__(self) -> str:
         return f'Var({self.name}={self.value})'
@@ -199,3 +202,42 @@ class Var(Node):
     def render(self, ctx: Ctx) -> str:
         assert self.value is not None
         return cast(str, _update_ctx(ctx, self, str(self.value)))
+
+
+class Injector(Var):
+    def __init__(self, children: List[Var], node: Node, name: str = None) -> None:
+        super().__init__(name)
+        self.children = {child.name: child for child in children}
+        self.node = node
+
+    def __hash__(self) -> int:
+        return hash(self.node)
+
+    def _inject(self, d: Dict[str, PrimaryType]):
+        for var_name, value in d.items():
+            self.children[var_name].assign(value)
+
+    def assign(self, value: List[Dict[str, PrimaryType]]) -> 'Injector':
+        self.value = value
+        self._inject(value[0])
+        return self
+
+    def render(self, ctx: Ctx) -> ValidType:
+        assert self.value
+        self._inject(self.value.pop(0))
+        return _render(self.node, ctx)
+
+
+class Repeat(Var):
+    def __init__(self, node: Node, name: str = None, sep=' ') -> None:
+        super().__init__(name)
+        self.node = node
+        self.sep = sep
+
+    def assign(self, value: int) -> 'Repeat':
+        self.value = value
+        return self
+
+    def render(self, ctx: Ctx) -> str:
+        assert self.value is not None
+        return self.sep.join(_render(self.node, ctx) for _ in range(self.value))
