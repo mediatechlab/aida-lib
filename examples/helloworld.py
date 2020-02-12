@@ -7,7 +7,7 @@ if __name__ == "__main__":
     name_var = Var('name')
 
     # create a simple phrase
-    node = (Empty + 'hello,' | name_var).to_phrase()
+    node = (Empty + 'hello,' | name_var).sentence()
 
     # assign a value to the variable
     name_var.assign('World')

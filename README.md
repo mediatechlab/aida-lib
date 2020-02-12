@@ -75,12 +75,12 @@ Check if the current node is in the context.
 Const('something').in_ctx()
 ```
 
-#### Create a phrase (`to_phrase`)
+#### Create a sentence (`sentence`)
 
 Formats a line into a sentence, capitalizing the first word and adding a period.
 
 ```Python
-Const('hello world').to_phrase()  # 'Hello world.'
+Const('hello world').sentence()  # 'Hello world.'
 ```
 
 #### Logical and numeric operators

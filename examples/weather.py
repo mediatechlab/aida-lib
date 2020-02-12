@@ -4,7 +4,7 @@ def create_forecast(weather_label, condition, temp, time_of_day):
     verb = Branch(~condition.in_ctx(), create_match(
         weather_label, now='is', default='will be'), 'will')
 
-    return (node | 'the weather' | verb | create_alt(condition, 'remain the same') | 'with a temperature of' | (temp | 'degrees')).to_phrase()
+    return (node | 'the weather' | verb | create_alt(condition, 'remain the same') | 'with a temperature of' | (temp | 'degrees')).sentence()
 
 
 if __name__ == "__main__":

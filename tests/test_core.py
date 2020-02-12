@@ -100,7 +100,7 @@ def test_sentence_ctx():
 
 
 def test_phrase():
-    phrase = (aida.Empty + 'this is a phrase').to_phrase()
+    phrase = (aida.Empty + 'this is a phrase').sentence()
     assert aida.render(phrase) == 'This is a phrase.'
 
 

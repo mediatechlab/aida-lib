@@ -109,8 +109,8 @@ class Node(object):
     def in_ctx(self) -> 'Node':
         return Node(Operation('in_ctx', self))
 
-    def to_phrase(self) -> 'Node':
-        return Node(Operation('to_phrase', self))
+    def sentence(self) -> 'Node':
+        return Node(Operation('sentence', self))
 
 
 class Operation(Node):
@@ -145,7 +145,7 @@ class Operation(Node):
                 return values[0] or values[1]
             else:
                 return values[0] + ' ' + values[1]
-        elif self.op == 'to_phrase':
+        elif self.op == 'sentence':
             values = [_render(op, ctx) for op in self.operands]
             ret = str(values[0]).capitalize() + \
                 ''.join(cast(List[str], values[1:]))
