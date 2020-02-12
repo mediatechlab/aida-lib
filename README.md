@@ -22,6 +22,12 @@ name_var.assign('World')
 print(render(node))  # 'Hello, World.'
 ```
 
+## Install
+
+```bash
+python setup.py install
+```
+
 ## Concepts
 
 When using Aida, first you compose a tree of operations on your text that include conditions via branches and other control flow. Later, you fill the tree with data and render the text.

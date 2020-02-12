@@ -3,3 +3,9 @@
 __pycache__
 .pytest_cache
 .vscode
+
+# project
+.stamps/
+dist/
+build/
+aida.egg-info/
