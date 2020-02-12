@@ -229,9 +229,9 @@ class Injector(Var):
 
 
 class Repeat(Var):
-    def __init__(self, node: Node, name: str = None, sep=' ') -> None:
+    def __init__(self, node: ValidType, name: str = None, sep=' ') -> None:
         super().__init__(name)
-        self.node = node
+        self.node = to_node(node)
         self.sep = sep
 
     def assign(self, value: int) -> 'Repeat':
