@@ -8,4 +8,4 @@ __pycache__
 .stamps/
 dist/
 build/
-aida.egg-info/
+*.egg-info/
