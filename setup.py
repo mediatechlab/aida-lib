@@ -4,7 +4,7 @@ from setuptools import setup
 HERE = pathlib.Path(__file__).parent
 
 setup(
-    name='aida',
+    name='aidalib',
     version='0.1',
     packages=['aida'],
     install_requires=[],
