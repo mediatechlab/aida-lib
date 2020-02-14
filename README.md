@@ -24,8 +24,10 @@ print(render(node))  # 'Hello, World.'
 
 ## Install
 
+Download and install with pip:
+
 ```bash
-python setup.py install
+pip install aidalib
 ```
 
 ## Concepts
