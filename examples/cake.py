@@ -2,9 +2,9 @@ from itertools import product
 from aida import render, LangConfig, Lang, NP, GNumber, Gender, VP, GPerson
 
 # words
-subj = (NP('I', gender=Gender.MALE)
+subj = (NP('I')
         .add_mapping('I', GNumber.SINGULAR, GPerson.FIRST, Lang.ENGLISH)
-        .add_mapping('he', GNumber.SINGULAR, GPerson.SECOND, Lang.ENGLISH)
+        .add_mapping('he', GNumber.SINGULAR, GPerson.SECOND, Gender.MALE, Lang.ENGLISH)
         .add_mapping('they', GNumber.PLURAL, GPerson.SECOND, Lang.ENGLISH)
         .add_mapping('we', GNumber.PLURAL, GPerson.FIRST, Lang.ENGLISH)
         .add_mapping('eu', GNumber.SINGULAR, GPerson.FIRST, Lang.PORTUGUESE)

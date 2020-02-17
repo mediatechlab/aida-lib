@@ -69,35 +69,35 @@ class LangElement(Node):
         return self._parent_config_cache
 
 
-class NP(LangElement):
-    def __init__(self, value, gender=None) -> None:
-        super().__init__(value)
-        self.gender = gender or Gender.NEUTRAL
-
-    def render(self, ctx: Ctx) -> ValidType:
-        config = self.get_parent_config()
-        assert config
-        config = cast(LangConfig, config)
-        return self._render(ctx, frozenset((self.gender, config.lang, config.number, config.person)))
-
-
-class VP(LangElement):
+class PhraseElement(LangElement):
     def __init__(self, value) -> None:
         super().__init__(value)
 
     def render(self, ctx: Ctx) -> ValidType:
         config = self.get_parent_config()
         assert config
-        config = cast(LangConfig, config)
-        return self._render(ctx, frozenset((config.lang, config.number, config.person)))
+        return self._render(ctx, cast(LangConfig, config).features)
+
+
+class NP(PhraseElement):
+    pass
+
+
+class VP(PhraseElement):
+    pass
 
 
 class LangConfig(LangElement):
-    def __init__(self, value: ValidType, lang=None, number=None, person=None) -> None:
+    def __init__(self, value: ValidType, lang=None, number=None, person=None, gender=None) -> None:
         super().__init__(value)
         self.lang = lang or Lang.ENGLISH
         self.number = number or GNumber.SINGULAR
         self.person = person or GPerson.FIRST
+        self.gender = gender or Gender.NEUTRAL
+
+    @property
+    def features(self) -> FrozenSet:
+        return frozenset((self.lang, self.number, self.person, self.gender)) - frozenset((None, ))
 
     def render(self, ctx: Ctx) -> ValidType:
         return _render(self.value, ctx)
