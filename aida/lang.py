@@ -103,22 +103,29 @@ class LangConfig(LangElement):
         return _render(self.value, ctx)
 
 
-def create_enumeration(*nodes: ValidType, config: LangConfig = None) -> Node:
-    _nodes = tuple(to_node(node) for node in nodes)
+def create_enumeration(config: LangConfig, *nodes: ValidType) -> Node:
     config = config or LangConfig('')
+    _nodes = tuple(to_node(node) for node in nodes)
 
-    assert config.lang == Lang.ENGLISH, 'Currently other languages are not supported.'
+    assert config.lang in (
+        Lang.ENGLISH, Lang.PORTUGUESE), 'Language not supported.'
 
     if len(_nodes) == 0:
         return Empty
     elif len(_nodes) == 1:
         return _nodes[0]
     elif len(_nodes) == 2:
-        return _nodes[0] | 'and' | _nodes[1]
+        if config.lang == Lang.ENGLISH:
+            return _nodes[0] | 'and' | _nodes[1]
+        else:
+            return _nodes[0] | 'e' | _nodes[1]
     else:
         comma_nodes = _nodes[1:-2]
         ret_node = _nodes[0]
         for node in comma_nodes:
             ret_node = ret_node + ',' | node
 
-        return ret_node + ', ' + _nodes[-2] + ', and ' + _nodes[-1]
+        if config.lang == Lang.ENGLISH:
+            return ret_node + ', ' + _nodes[-2] + ', and ' + _nodes[-1]
+        else:
+            return ret_node + ', ' + _nodes[-2] + ' e ' + _nodes[-1]
