@@ -1,31 +1,37 @@
 from enum import Enum
-from typing import Dict, FrozenSet, Optional, Tuple, cast, Any
+from typing import Dict, FrozenSet, Optional, List, cast
 
 from .core import Ctx, Empty, Node, Node, ValidType, _render, to_node
 
 __all__ = ['Gender', 'Lang', 'GNumber', 'GPerson',
            'create_enumeration', 'NP', 'VP', 'LangConfig']
 
-LangMapping = Dict[FrozenSet, str]
+
+class LangFeature(Enum):
+    pass
 
 
-class Gender(Enum):
+LangFeatureSet = FrozenSet[LangFeature]
+LangMapping = Dict[LangFeatureSet, str]
+
+
+class Gender(LangFeature):
     NEUTRAL = 'N'
     MALE = 'M'
     FEMALE = 'F'
 
 
-class Lang(Enum):
+class Lang(LangFeature):
     ENGLISH = 'english'
     PORTUGUESE = 'portuguese'
 
 
-class GNumber(Enum):
+class GNumber(LangFeature):
     SINGULAR = 'singular'
     PLURAL = 'plural'
 
 
-class GPerson(Enum):
+class GPerson(LangFeature):
     FIRST = 'first'
     SECOND = 'second'
     THIRD = 'third'
@@ -35,26 +41,10 @@ class LangElement(Node):
     def __init__(self, value: ValidType) -> None:
         super().__init__(value)
         self._parent_config_cache = None
-        self.mappings: LangMapping = {}
 
     def __hash__(self) -> int:
         config = self.get_parent_config()
         return hash((config, self.value))
-
-    def _render(self, ctx: Ctx, key: FrozenSet) -> ValidType:
-        greatest_subset = frozenset()
-        best_key = None
-        for fs_key in self.mappings:
-            subset = fs_key.intersection(key)
-            if len(subset) > len(greatest_subset):
-                greatest_subset = subset
-                best_key = fs_key
-
-        return self.mappings[best_key] if best_key else self.value
-
-    def add_mapping(self, value: str, *key) -> 'LangElement':
-        self.mappings[frozenset(key)] = value
-        return self
 
     def get_parent_config(self):
         if not self._parent_config_cache:
@@ -72,11 +62,40 @@ class LangElement(Node):
 class PhraseElement(LangElement):
     def __init__(self, value) -> None:
         super().__init__(value)
+        self.mappings: LangMapping = {}
+        self._stack: List[LangFeature] = []
+
+    def _render(self, ctx: Ctx, feat: LangFeatureSet) -> ValidType:
+        greatest_subset = frozenset()
+        best_key = None
+        for fs_key in self.mappings:
+            subset = fs_key.intersection(feat)
+            if len(subset) > len(greatest_subset):
+                greatest_subset = subset
+                best_key = fs_key
+
+        return self.mappings[best_key] if best_key else self.value
 
     def render(self, ctx: Ctx) -> ValidType:
         config = self.get_parent_config()
         assert config
         return self._render(ctx, cast(LangConfig, config).features)
+
+    def add_mapping(self, value: str, *feat: LangFeature) -> 'PhraseElement':
+        self.mappings[frozenset(feat).union(frozenset(self._stack))] = value
+        return self
+
+    def push(self, *feats: LangFeature) -> 'PhraseElement':
+        self._stack.extend(feats)
+        return self
+
+    def pop(self) -> 'PhraseElement':
+        self._stack.pop(0)
+        return self
+
+    def clear(self) -> 'PhraseElement':
+        self._stack.clear()
+        return self
 
 
 class NP(PhraseElement):
