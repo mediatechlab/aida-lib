@@ -41,9 +41,10 @@ def test_alt():
 
 
 def test_enumerate():
-    assert aida.render(aida.Enumeration('Alice')) == 'Alice'
-    assert aida.render(aida.Enumeration('Alice', 'Bob')) == 'Alice and Bob'
-    assert aida.render(aida.Enumeration(
+    assert aida.render(aida.create_enumeration('Alice')) == 'Alice'
+    assert aida.render(aida.create_enumeration(
+        'Alice', 'Bob')) == 'Alice and Bob'
+    assert aida.render(aida.create_enumeration(
         'Alice', 'Bob', 'Chris')) == 'Alice, Bob, and Chris'
 
 

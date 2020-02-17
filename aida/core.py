@@ -61,8 +61,12 @@ class Node(object):
     Basic building block for the render tree.
     '''
 
-    def __init__(self, value: Union[ValidType, 'Operation']) -> None:
+    def __init__(self, value: ValidType) -> None:
         self.value = value
+        self.parent = None
+
+        if isinstance(value, Node):
+            value.parent = self
 
     def __hash__(self) -> int:
         return hash(self.value)
@@ -123,6 +127,9 @@ class Operation(Node):
         self.op = op
         self.operands = tuple(to_node(n) for n in operands)
 
+        for operand in self.operands:
+            operand.parent = self
+
     def __hash__(self) -> int:
         return hash((self.op, self.operands))
 
@@ -167,9 +174,6 @@ class Const(Node):
     def __init__(self, value: PrimaryType) -> None:
         super().__init__(value)
 
-    def __hash__(self) -> int:
-        return hash(self.value)
-
     def __repr__(self) -> str:
         return f'Const({self.value})' if self.value != '' else 'empty'
 
@@ -190,7 +194,7 @@ class Var(Node):
         self.name = name
 
     def __hash__(self) -> int:
-        return hash((self.__class__.__name__, self.name, self.value))
+        return hash(('var', self.name, self.value))
 
     def __repr__(self) -> str:
         return f'Var({self.name}={self.value})'
@@ -233,6 +237,9 @@ class Repeat(Var):
         super().__init__(name)
         self.node = to_node(node)
         self.sep = sep
+
+    def __hash__(self) -> int:
+        return hash(self.node)
 
     def assign(self, value: int) -> 'Repeat':
         self.value = value
