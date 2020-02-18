@@ -5,7 +5,7 @@ HERE = pathlib.Path(__file__).parent
 
 setup(
     name='aidalib',
-    version='0.1',
+    version='0.2',
     packages=['aida'],
     install_requires=[],
     license='MIT',
