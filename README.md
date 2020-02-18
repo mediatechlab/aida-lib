@@ -30,7 +30,7 @@ Download and install with pip:
 pip install aidalib
 ```
 
-## Concepts
+## Core Concepts
 
 When using Aida, first you compose a tree of operations on your text that include conditions via branches and other control flow. Later, you fill the tree with data and render the text.
 
@@ -106,8 +106,7 @@ Const('hello world').sentence()  # 'Hello world.'
 | and                   | `x & y`  |
 | plus                  | `x + y`  |
 
-
-## Random choice
+### Random choice
 
 Randomly draws one node from a list of possibilities.
 
@@ -115,13 +114,7 @@ Randomly draws one node from a list of possibilities.
 Choice('Alice', 'Bob', 'Chris')  # either 'Alice', 'Bob', or 'Chris'
 ```
 
-## Enumerate items
-
-```Python
-Enumeration('Alice', 'Bob', 'Chris')  # 'Alice, Bob, and Chris'
-```
-
-## Injector
+### Injector
 
 The `Injector` class assigns values to variables from a list each time it is rendered. Very useful to automatically fill values based on data.
 
@@ -133,8 +126,8 @@ node = Injector([animal, sound], node)
 
 # assign multiple values
 node.assign([
-  {'animal': 'cat', 'sound': 'meaw'}, 
-  {'animal': 'dog', 'sound': 'roof'}, 
+  {'animal': 'cat', 'sound': 'meaw'},
+  {'animal': 'dog', 'sound': 'roof'},
 ])
 
 render(node) # 'cat makes meaw'
@@ -142,7 +135,7 @@ render(node) # 'cat makes meaw'
 render(node) # 'dog makes roof'
 ```
 
-## For-loops with `Repeat`
+### For-loops with `Repeat`
 
 Use `Repeat` to render a node multiple times. At the simplest level, you have this:
 
@@ -158,16 +151,69 @@ animal = Var('animal')
 sound = Var('sound')
 node = animal | 'makes' | sound
 node = Injector([animal, sound], node)
-repeat = Repeat(node) 
+repeat = Repeat(node)
 
 # assign multiple values
 data = [
-  {'animal': 'cat', 'sound': 'meaw'}, 
-  {'animal': 'dog', 'sound': 'roof'}, 
+  {'animal': 'cat', 'sound': 'meaw'},
+  {'animal': 'dog', 'sound': 'roof'},
 ]
 node.assign(data)
 repeat.assign(len(data))
 
 # renders text based on data
-render(node)  # cat makes meaw dog makes roof 
+render(node)  # cat makes meaw dog makes roof
+```
+
+## Language Concepts
+
+There are some experimental features that allows you to create text that adapts to common language features, like grammatical _number_ and _person_.
+
+### Enumerate items
+
+Use `LangConfig` to setup language features and then call `create_enumeration()`.
+
+```Python
+from aida import create_enumeration, LangConfig, Lang, render
+
+render(create_enumeration(LangConfig(lang=Lang.ENGLISH), 'Alice', 'Bob', 'Chris'))
+# 'Alice, Bob, and Chris'
+
+render(create_enumeration(LangConfig(lang=Lang.PORTUGUESE), 'Alice', 'Bob', 'Chris'))
+# 'Alice, Bob e Chris'
+```
+
+### Sentence Structure
+
+You can compose sentences using special structures: `NP` (noun phrase) and `VP` (verb phrase) along with `LangConfig`.
+
+```Python
+from aida import NP, VP, LangConfig
+
+subj = NP('the dog')
+verb = VP('barked')
+
+s = (subj | verb).sentence()
+
+render(LangConfig(s))  # The dog barked.
+```
+
+What really makes this different from just using `Const` is that we can create rules that change the output of `NP` and `VP` based on various language features. The system will try to use the rule that matches most features from the given `LangConfig`.
+
+```Python
+from aida import NP, VP, LangConfig, GNumber, GPerson
+
+subj = (NP('I')
+        .add_mapping('I', GNumber.SINGULAR, GPerson.FIRST)
+        .add_mapping('he', GNumber.SINGULAR, GPerson.THIRD))
+        .add_mapping('we', GNumber.PLURAL, GPerson.FIRST))
+verb = (VP('drive')
+        .add_mapping('drive', GPerson.FIRST)
+        .add_mapping('drives', GPerson.THIRD))
+
+s = (subj | verb | 'a nice car').sentence()
+
+render(LangConfig(s, number=GNumber.SINGULAR, person=GPerson.FIRST))  # I drive a nice car.
+render(LangConfig(s, number=GNumber.SINGULAR, person=GPerson.THIRD))  # He drives a nice car.
+render(LangConfig(s, number=GNumber.PLURAL, person=GPerson.FIRST))  # We drive a nice car.
 ```
