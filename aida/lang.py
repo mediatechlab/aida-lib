@@ -65,6 +65,9 @@ class PhraseElement(LangElement):
         self.mappings: LangMapping = {}
         self._stack: List[LangFeature] = []
 
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}[{self.value}]'
+
     def _render(self, ctx: Ctx, feat: LangFeatureSet) -> ValidType:
         greatest_subset = frozenset()
         best_key = None
@@ -90,7 +93,7 @@ class PhraseElement(LangElement):
         return self
 
     def pop(self) -> 'PhraseElement':
-        self._stack.pop(0)
+        self._stack.pop()
         return self
 
     def clear(self) -> 'PhraseElement':
