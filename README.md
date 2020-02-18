@@ -1,5 +1,7 @@
 # Aida Lib
 
+![](https://github.com/mediatechlab/aida-lib/workflows/Python%20package/badge.svg)
+
 Aida is a language agnostic library for text generation.
 
 ## Usage
