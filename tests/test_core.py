@@ -40,13 +40,6 @@ def test_alt():
     assert aida.render(alt, ctx) == 'Bob'
 
 
-def test_enumerate():
-    assert aida.render(aida.Enumeration('Alice')) == 'Alice'
-    assert aida.render(aida.Enumeration('Alice', 'Bob')) == 'Alice and Bob'
-    assert aida.render(aida.Enumeration(
-        'Alice', 'Bob', 'Chris')) == 'Alice, Bob, and Chris'
-
-
 def test_branch():
     x = aida.Var('val')
     k = aida.Const(3)
