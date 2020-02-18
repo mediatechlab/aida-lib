@@ -217,3 +217,11 @@ render(LangConfig(s, number=GNumber.SINGULAR, person=GPerson.FIRST))  # I drive 
 render(LangConfig(s, number=GNumber.SINGULAR, person=GPerson.THIRD))  # He drives a nice car.
 render(LangConfig(s, number=GNumber.PLURAL, person=GPerson.FIRST))  # We drive a nice car.
 ```
+
+## Examples
+
+Check more complex uses at the [examples folder](examples).
+
+## License
+
+Licensed under the [MIT License](LICENSE).
