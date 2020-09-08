@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "aida-lib"
+version = "0.3.0"
+description = "Aida is a language agnostic library for text generation."
+authors = ["Giulio Bottari <giuliobottari@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+	{include = "aida"}
+]
+classifiers = [
+	"Programming Language :: Python :: 3",                                  
+	"Intended Audience :: Developers", 
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.0.1"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
+[tool.poetry.urls]
+"Bus Tracker" = "https://github.com/mediatechlab/aida-lib/issues"
+"Documentation" = "https://github.com/mediatechlab/aida-lib/blob/master/README.md"
+"Source Code" = "https://github.com/mediatechlab/aida-lib"
